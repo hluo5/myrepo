@@ -1,0 +1,265 @@
+#!/usr/bin/env python3
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from lmfit import Model
+from scipy.optimize import brentq
+
+plt.rcParams['font.family'] = 'Arial'
+
+# Model function for Gibbs free energy (lmfit style)
+def gibbs_free_energy_lmfit(x_H2, T,
+                            A00, A01, A02,  # L0(T) = A00 + A01*T + A02*T^2
+                            A10, A11, A12,  # L1(T)
+                            A20, A21, A22,  # L2(T)
+                            A30, A31, A32,  # L3(T)
+                            A40, A41, A42,   # L4(T)
+                            A50, A51, A52
+                           ):
+    """
+    Calculates Gibbs free energy of mixing in eV:
+      G_mix = G_excess + G_ideal
+    using a polynomial (Redlich-Kister-like) expansion in x_H2 and T.
+    """
+    # Ensure x_H2 is within (0,1):
+    eps = 1e-10
+    x_H2 = np.clip(x_H2, eps, 1-eps)
+    x_sil = 1.0 - x_H2
+
+    # Polynomial T-dependence for each coefficient L_i
+    L0 = A00 + A01*T + A02*T**2
+    L1 = A10 + A11*T + A12*T**2
+    L2 = A20 + A21*T + A22*T**2
+    L3 = A30 + A31*T + A32*T**2
+    L4 = A40 + A41*T + A42*T**2
+    L5 = A50 + A51*T + A52*T**2
+
+    # Excess Gibbs free energy
+    excess_term = x_H2*(1 - x_H2)*(
+        L0*(2*x_H2 - 1)**0 +
+        L1*(2*x_H2 - 1)**1 +
+        L2*(2*x_H2 - 1)**2 +
+        L3*(2*x_H2 - 1)**3 +
+        L4*(2*x_H2 - 1)**4 +
+        L5*(2*x_H2 - 1)**5
+    )
+
+    # Ideal mixing term (in eV)
+    k_B = 8.617333262145e-5  # Boltzmann constant in eV/K
+    ideal_term = k_B * T * (x_H2*np.log(x_H2) + x_sil*np.log(x_sil))
+
+    return excess_term + ideal_term
+
+# 1) Load data
+data = pd.read_excel("G_mix_5GPa_H2version.xlsx")
+
+x_H2_data  = data['x_H2'].values
+T_data     = data['Temperature'].values
+P_data     = data['Pressure'].values
+G_mix_data = data['Gibbs_free_energy'].values
+G_err_data = data['Gibbs_free_energy_error'].values
+
+# Weights: pass sqrt(weights) to lmfit if you want ~1/sigma
+weights = 1.0 / (G_err_data**2)
+#weights = 1.0
+
+# 2) Create an lmfit Model and do the fit
+model = Model(gibbs_free_energy_lmfit, 
+              independent_vars=['x_H2','T'])
+
+# Initial parameter guesses
+params_lmfit = model.make_params(
+    A00=0.0, A01=-1e-3, A02=-1e-3,
+    A10=0.0, A11=-1e-3, A12=-1e-3,
+    A20=1e-3, A21=0.0, A22=0.0,
+    A30=1e-3, A31=0.0, A32=0.0,
+    A40=0.0, A41=0.0, A42=-1e-3,
+    A50=1e-3, A51=0.0, A52=0.0
+)
+
+#params['A00'].set(value=0.1, vary=False)
+#params['A00'].set(value=0.1, vary=True)
+params_lmfit['A00'].set(value=0.0, vary=False)
+params_lmfit['A01'].set(value=-1e-3, vary=True)
+params_lmfit['A02'].set(value=-1e-3, vary=True)
+params_lmfit['A10'].set(value=0.0, vary=False)
+params_lmfit['A11'].set(value=-1e-3, vary=True)
+params_lmfit['A12'].set(value=-1e-3, vary=True)
+params_lmfit['A20'].set(value=1e-3, vary=True)
+params_lmfit['A21'].set(value=0.0, vary=False)
+params_lmfit['A22'].set(value=0.0, vary=False)
+params_lmfit['A30'].set(value=1e-3, vary=True)
+params_lmfit['A31'].set(value=0.0, vary=False)
+params_lmfit['A32'].set(value=0.0, vary=False)
+params_lmfit['A40'].set(value=0.0, vary=False)
+params_lmfit['A41'].set(value=0.0, vary=False)
+params_lmfit['A42'].set(value=-1e-3, vary=True)
+params_lmfit['A50'].set(value=1e-3, vary=True)
+params_lmfit['A51'].set(value=0.0, vary=False)
+params_lmfit['A52'].set(value=0.0, vary=False)
+
+# Fit
+result = model.fit(
+    data=G_mix_data,
+    params=params_lmfit,
+    x_H2=x_H2_data,
+    T=T_data,
+    weights=np.sqrt(weights)
+    #weights=weights
+)
+
+# Print a fit report
+print(result.fit_report())
+
+# Extract best-fit parameters into a list in the correct order
+best_vals = result.best_values  # dict
+fitted_params = [
+    best_vals['A00'], best_vals['A01'], best_vals['A02'],
+    best_vals['A10'], best_vals['A11'], best_vals['A12'],
+    best_vals['A20'], best_vals['A21'], best_vals['A22'],
+    best_vals['A30'], best_vals['A31'], best_vals['A32'],
+    best_vals['A40'], best_vals['A41'], best_vals['A42'],
+    best_vals['A50'], best_vals['A51'], best_vals['A52']
+]
+
+
+###############################################
+# 3) Plot the data + fit
+###############################################
+plt.figure(figsize=(8,6))
+ax = plt.gca()
+
+# Minor ticks on
+ax.minorticks_on()
+# Turn on top/right axes + minor ticks
+ax.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+ax.tick_params(axis='both', which='major', labelsize=12)
+ax.tick_params(axis='both', which='minor', length=3)  # e.g. smaller length for minor ticks
+
+# Horizontal line at G=0
+plt.axhline(0, color='gray', linestyle=':', linewidth=1.0)
+
+# Distinct colors for P,T combos
+distinct_colors = ['dodgerblue','violet','crimson','orange','pink','purple','brown']
+color_idx = 0
+
+pressures_unique = data['Pressure'].unique()
+for P_val in pressures_unique:
+    # For each pressure, there may be multiple T
+    Tvals = data[data['Pressure']==P_val]['Temperature'].unique()
+    for T_val in Tvals:
+        subset = data[(data['Pressure']==P_val) & (data['Temperature']==T_val)]
+        x_sub = subset['x_H2'].values
+        G_sub = subset['Gibbs_free_energy'].values
+        G_err = subset['Gibbs_free_energy_error'].values
+
+        color = distinct_colors[color_idx % len(distinct_colors)]
+        color_idx += 1
+
+        # Plot data points (3) with black edge: "markeredgecolor='k'"
+        plt.errorbar(
+            x_sub, G_sub, yerr=G_err, fmt='o', 
+            markersize=10, markeredgecolor='k', markerfacecolor=color,
+            ecolor=color, color=color,
+            label=f'P={P_val} GPa, T={T_val} K'
+        )
+
+        # Fitted curve over x in [0,1]
+        x_fit = np.linspace(0.0, 1.0, 200)
+        T_array = np.full_like(x_fit, T_val)  # same T for all x
+        G_fit = gibbs_free_energy_lmfit(x_fit, T_array, *fitted_params)
+        plt.plot(x_fit, G_fit, '-', color=color)
+
+############################
+# 2) Plot predicted curves (dashed lines) at chosen T
+############################
+T_predict_list = [2600, 3500]  # example T
+pred_colors = ['lightskyblue','salmon']  # or any list of 4 colors
+for i, T_pred in enumerate(T_predict_list):
+    x_pred = np.linspace(0.0, 1.0, 200)
+    T_arr  = np.full_like(x_pred, T_pred)
+    G_pred = gibbs_free_energy_lmfit(x_pred, T_arr, *fitted_params)
+    plt.plot(x_pred, G_pred, '--', color=pred_colors[i],
+             label=f'Predicted T={T_pred} K')
+
+# Add (a) in upper left corner
+plt.text(0.05, 0.95, '(a)', transform=ax.transAxes,
+         fontsize=14, va='top', ha='left')
+
+plt.xlabel('Mole Fraction of H2, x_H2', fontsize=13)
+plt.ylabel('Gibbs Free Energy of Mixing (eV)', fontsize=13)
+#plt.title("Gibbs Free Energy of Mixing: Data + Fit + Extra T Predictions")
+plt.legend()
+
+plt.savefig("fitting_plot_with_predictions.pdf", dpi=600, format="pdf", bbox_inches='tight')
+plt.show()
+
+
+###############################################
+# 4) Calculate solvus closure temperature (T at which G_mix=0)
+###############################################
+
+# We'll define a helper function that, for a given x_H2,
+# numerically solves G_mix(x, T) = 0 for T.
+def closure_temperature_for_x(x, Tmin=2000, Tmax=4000):
+    """
+    Solve for T in [Tmin, Tmax] such that G_mix(x,T)=0.
+    Returns None if no solution is found.
+    """
+    # We'll use brentq from scipy. Must ensure sign changes over [Tmin,Tmax].
+    # If there's no sign change, we skip.
+
+    def f(T):
+        return gibbs_free_energy_lmfit(x, T, *fitted_params)
+
+    f1 = f(Tmin)
+    f2 = f(Tmax)
+    if f1 == 0.0:
+        return Tmin
+    if f2 == 0.0:
+        return Tmax
+    if f1 * f2 > 0.0:
+        # No sign change => no root in [Tmin, Tmax]
+        return None
+    
+    # Otherwise, solve for T
+    # You can wrap in a try/except for safety:
+    try:
+        T_sol = brentq(f, Tmin, Tmax)
+        return T_sol
+    except ValueError:
+        return None
+
+# Evaluate for x from 0.01..0.99
+x_vals_solvus = np.linspace(0.6, 1.0, 200)
+T_solvus_list = []
+for x_val in x_vals_solvus:
+    T_sol = closure_temperature_for_x(x_val, 300, 5000)
+    if T_sol is not None:
+        T_solvus_list.append(T_sol)
+    else:
+        T_solvus_list.append(np.nan)  # or skip
+
+T_solvus_array = np.array(T_solvus_list)
+
+###############################################
+# 4) Plot solvus closure T vs. x_H2 in a separate figure
+###############################################
+plt.figure(figsize=(7,5))
+ax2 = plt.gca()
+ax2.minorticks_on()
+ax2.tick_params(axis='both', which='both', direction='in', top=True, right=True)
+ax2.tick_params(axis='both', which='major', labelsize=12)
+ax2.tick_params(axis='both', which='minor', length=3)
+
+plt.plot(x_vals_solvus, T_solvus_array, 'k-', linewidth=2,
+         label='Solvus closure T (Gmix=0)')
+
+plt.xlabel('Mole Fraction of H2, x_H2', fontsize=13)
+plt.ylabel('Closure Temperature (K) for G_mix=0', fontsize=13)
+#plt.title("Solvus Closure Temperature")
+plt.legend()
+
+plt.savefig("solvus_closure_temperature.pdf", dpi=600, format="pdf", bbox_inches='tight')
+plt.show()
