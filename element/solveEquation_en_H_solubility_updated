@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+import numpy as np
+from scipy.optimize import fsolve
+
+file = open("y_with_uncertainties.txt", 'w')
+x = np.loadtxt("x.txt", skiprows=0, max_rows=None)
+
+# Define mean values for g, a, b, c and their uncertainties (standard deviations)
+g_mean = -6.934782697
+a_mean = -37.057
+b_mean = 30.67004
+c_mean = 0.0
+T = 2200
+
+# Uncertainties in the parameters (adjust these values as needed)
+sigma_g = 0.00296573  # uncertainty in g
+sigma_a = 0.03428  # uncertainty in a
+sigma_b = 0.07146  # uncertainty in b
+sigma_c = 0.0  # uncertainty in c
+
+# Number of Monte Carlo samples
+num_samples = 10000
+
+# Loop through the first two elements of x
+for i in range(2):
+    
+    # Function to calculate y for given values of g, a, b, c, and x
+    def f(y, x, g, a, b, c):
+        return g - a - b - 2*c*y + c*y**2 - 8.617333 * 10**(-5) * T *2*np.log(2*y/(5 - 3 * y))
+        #return g - a - b  - 8.617333 * 10**(-5) * T *np.log(y/(5 - 4 * y))
+    # Array to store the solutions for y
+    y_samples = []
+    
+    for _ in range(num_samples):
+        # Generate random values for g, a, b, and c from normal distributions
+        g_sample = np.random.normal(g_mean, sigma_g)
+        a_sample = np.random.normal(a_mean, sigma_a)
+        b_sample = np.random.normal(b_mean, sigma_b)
+        c_sample = np.random.normal(c_mean, sigma_c)
+        
+        # Solve for y with the sampled values of g, a, b, and c
+        y_solution = fsolve(f, 0.01, args=(x[i], g_sample, a_sample, b_sample, c_sample))
+        y_samples.append(y_solution[0])  # Append the solution to the list
+    
+    # Calculate mean and standard deviation of y from the samples
+    y_mean = np.mean(y_samples)
+    y_std = np.std(y_samples)
+    
+    print(f"x[{i}] = {x[i]}: y_mean = {y_mean}, y_std = {y_std}")
+    
+    # Save the result (mean and uncertainty) to the file
+    file.write(f"x[{i}] = {x[i]}, y_mean = {y_mean}, y_std = {y_std}\n")
+
+file.close()
