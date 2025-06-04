@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+
+import numpy as np
+import os
+import math
+
+EC = np.array([818, 156.2, 809.5, 55.8, 634, 528.2, 1124.6, 285],dtype='f')
+OC = np.array([881.6, 189.5, 678, 63.9, 720, 577.9, 1199.8, 202],dtype='f')
+CC = np.array([837.6, 151.1, 636.9, 52.6, 651.4, 573.3, 1119.6, 156],dtype='f')
+CI = np.array([637.4, 131, 570.5, 38.1, 460.5, 430.6, 873.5, 175],dtype='f')
+PM = np.array([7.000, 1.200, 7.100, 0.350, 3.900, 3.500, 7.600, 1.700],dtype='f')
+
+logDFe_PM = np.array([0,0,0,0,0,0,0,0],dtype='f')
+mu_FePMdiff = np.array([2.843,2.381,1.597,3.388,3.654,3.408,2.667,1.782],dtype='f')
+a = np.array([-2.819,-4.043,-3.788,0.453,-0.601,-0.865,-1.223,-1.077],dtype='f')
+b = np.array([23516,25726,20234,14310,20301,20422,17538,11225],dtype='f')
+
+logDFeS_PM = np.array([0,0,0,0,0,0,0,0],dtype='f')
+mu_FeSPMdiff = np.array([3.211,2.886,2.246,3.095,3.267,3.041,2.497,1.863],dtype='f')
+c = np.array([1.998,1.681,0.0387,3.013,3.143,2.598,1.142,-0.356],dtype='f')
+d = np.array([7138,6471,8953,3601,3975,5652,7616,8395],dtype='f')
+
+T = 3000
+
+for i in range(8):
+	logDFe_PM[i] = math.log(math.exp(mu_FePMdiff[i]/(6.242*10**18)/(1.38*10**(-23)*T))*0.378563117, 10)
+	logDFeS_PM[i] = math.log(math.exp(mu_FeSPMdiff[i]/(6.242*10**18)/(1.38*10**(-23)*T))*0.480966737, 10)
+print(logDFe_PM)
+print(logDFeS_PM)
+
+#for i in range(8):
+#        logDFe_PM[i] = a[i] + b[i] / T
+#        logDFeS_PM[i] = c[i] + d[i] / T
+#print(logDFe_PM)
+#print(logDFeS_PM)
+
+file = open("y.txt", 'w')
+
+for j in range(100000):
+	F_sulfide_init = np.random.uniform(0.04,0.06)
+	F_sulfide_mix = np.random.uniform(0,0.001)
+	LVfraction = np.random.uniform(0.005,0.006)
+	Corefraction = np.random.uniform(0,0.003)
+	
+	C_HSE_FeS = np.array([0,0,0,0,0,0,0,0],dtype='f')
+	C_HSE_PM = np.array([0,0,0,0,0,0,0,0],dtype='f')
+	C_HSE_Fe = np.array([0,0,0,0,0,0,0,0],dtype='f')
+	C_HSE_PM_pred = np.array([0,0,0,0,0,0,0,0],dtype='f')
+
+
+#Initial distribution without sulfide segregation
+	#for i in range(8):
+        	#C_HSE_Fe[i] = (0.95*EC[i] + 0.05*CC[i]) / (0.323 + 0.677/10**logDFe_PM[i])
+        	#C_HSE_PM[i] = C_HSE_Fe[i] / 10**logDFe_PM[i]
+		#print(C_HSE_FeS, C_HSE_PM, C_HSE_Fe)
+
+
+#Initial distribution with sulfide segregation
+	for i in range(8):
+		C_HSE_FeS[i] = (0.95*EC[i] + 0.05*CC[i]) / ((0.323-F_sulfide_init)*10**logDFe_PM[i]/10**logDFeS_PM[i] + F_sulfide_init + 0.677/10**logDFeS_PM[i])
+		C_HSE_PM[i] = C_HSE_FeS[i] / 10**logDFeS_PM[i]
+		C_HSE_Fe[i] = C_HSE_PM[i] * 10**logDFe_PM[i]
+		#print(C_HSE_FeS, C_HSE_PM, C_HSE_Fe)
+
+#no late veneer and core contribution
+#	for i in range(8):
+#		C_HSE_PM_pred[i] = F_sulfide_mix* C_HSE_FeS[i] + (1-F_sulfide_mix)*C_HSE_PM[i]
+		#print("no late veneer and core contribution")
+		#print(C_HSE_PM_pred)
+
+#with late veneer
+	for i in range(8):
+		C_HSE_PM_pred[i] = LVfraction*CC[i] + F_sulfide_mix* C_HSE_FeS[i] + (1-LVfraction-F_sulfide_mix)*C_HSE_PM[i]
+		#print("with late veneer")
+		#print(C_HSE_PM_pred)
+
+#with core contribution
+#	for i in range(8):
+#		C_HSE_PM_pred[i] = Corefraction*C_HSE_Fe[i] + F_sulfide_mix* C_HSE_FeS[i] + (1-Corefraction-F_sulfide_mix)*C_HSE_PM[i]
+		#print("with core contribution")
+		#print(C_HSE_PM_pred)
+
+#with late veneer and core contribution
+#	for i in range(8):
+#		C_HSE_PM_pred[i] = LVfraction*CC[i] + Corefraction*C_HSE_Fe[i] + F_sulfide_mix* C_HSE_FeS[i] + (1-LVfraction-Corefraction-F_sulfide_mix)*C_HSE_PM[i]
+		#print("with late veneer and core contribution")
+		#print(C_HSE_PM_pred)
+	diff = np.sum((C_HSE_PM_pred-PM)**2)
+	np.savetxt(file,np.column_stack(np.r_[F_sulfide_init,F_sulfide_mix,LVfraction,Corefraction,C_HSE_PM_pred,diff]),fmt='%1.5f')
+
+file.close()
+
+
+os.system("awk '{ print $NF,$0 }' y.txt | sort -k1,1 -n | cut -f2- -d ' ' > y_sorted.txt")
+os.system("head -20 y_sorted.txt > y_sorted_20.txt")
