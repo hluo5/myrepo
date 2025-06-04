@@ -1,0 +1,89 @@
+#!/bin/bash
+#PBS -l nodes=node23:ppn=28
+#PBS -N vasp
+#PBS -l walltime=720:00:00
+#PBS -u luohaiyang
+
+cd /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/0gpa/3K_allopt_0.9Vx_anneal_glass/105000
+
+for i in $(seq 2700 -300 300)
+do
+j=$((i-300)) 
+k=$((i+300))
+mkdir 1ks_$i
+cd 1ks_$i
+mkdir anneal
+mkdir eq
+cd anneal
+cat > INCAR <<!
+NWRITE=2
+ISTART=0
+LWAVE=.FALSE.
+LCHARG=.FALSE.
+ENCUT=400.00 EV
+NELM=20
+EDIFF=1E-04
+MAXMIX=50
+NSW=300
+NBLOCK=1
+KBLOCK=1
+ISYM=0
+ISIF=2
+POTIM=2.00
+TEBEG=$i
+TEEND=$j
+SMASS=-1
+NPACO=104
+APACO=10.4
+ISMEAR=0
+SIGMA=0.1
+IALGO=48
+LREAL=A
+NPAR=2
+!
+cp /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/0gpa/3K_allopt_0.9Vx_anneal_glass/105000/1ks_$k/anneal/KPOINTS .
+cp /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/0gpa/3K_allopt_0.9Vx_anneal_glass/105000/1ks_$k/anneal/POTCAR .
+cp /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/0gpa/3K_allopt_0.9Vx_anneal_glass/105000/1ks_$k/eq/CONTCAR .
+mv CONTCAR POSCAR
+mpirun -np 28 vasp --machinefile /data/known_hosts 1>std.log 2>std.err
+cd ..
+cd eq
+cat > INCAR <<!
+NWRITE=2
+ISTART=0
+LWAVE=.FALSE.
+LCHARG=.FALSE.
+ENCUT=400.00 EV
+NELM=20
+EDIFF=1E-04
+MAXMIX=50
+NSW=5000
+NBLOCK=1
+KBLOCK=1
+ISYM=0
+ISIF=2
+POTIM=1.00
+TEBEG=$j
+TEEND=$j
+SMASS=0
+NPACO=104
+APACO=10.4
+ISMEAR=0
+SIGMA=0.1
+IALGO=48
+LREAL=A
+NPAR=2
+!
+cp /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/0gpa/3K_allopt_0.9Vx_anneal_glass/105000/1ks_$i/anneal/KPOINTS .
+cp /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/0gpa/3K_allopt_0.9Vx_anneal_glass/105000/1ks_$i/anneal/POTCAR .
+cp /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/0gpa/3K_allopt_0.9Vx_anneal_glass/105000/1ks_$i/anneal/CONTCAR .
+mv CONTCAR POSCAR
+mpirun -np 28 vasp --machinefile /data/known_hosts 1>std.log 2>std.err
+cd ..
+cd ..
+done
+
+
+
+
+ 

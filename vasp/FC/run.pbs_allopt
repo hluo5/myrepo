@@ -1,0 +1,62 @@
+#!/bin/bash
+#PBS -l nodes=node33:ppn=28
+#PBS -N vasp
+#PBS -l walltime=200:00:00
+#PBS -u luohaiyang
+
+cd /home/luohaiyang/data/home/luohaiyang/equilibrium/mgsio3/allopt/V_1.000_3K
+
+for i in $(seq 5000 200 9800) 
+do
+cat >POSCAR <<!
+MgSiO3
+1.000000000000
+10.110580000000000      0.0000000000000000      0.0000000000000000 
+ 0.000000000000000     10.1105800000000000      0.0000000000000000
+ 0.000000000000000      0.0000000000000000     10.1105800000000000
+Mg Si O
+16 16 48
+`sed -n "$(grep -n "Direct configuration=  $i$" XDAT | tail -1 | cut -d : -f 1),+80p" XDAT`
+!
+cp INCAR.youhua1 INCAR
+mpirun -np 28 vasp --machinefile /data/known_hosts 1>std.log 2>std.err
+cp CONTCAR CONTONE$i
+cp OSZICAR OSZIONE$i
+cp CONTCAR POSCAR
+cp INCAR.youhua2 INCAR
+mpirun -np 28 vasp --machinefile /data/known_hosts 1>std.log 2>std.err
+cp CONTCAR CONTTWO$i
+cp OSZICAR OSZITWO$i
+cp CONTCAR POSCAR
+`sed -i '7a Selective Dynamics' POSCAR`
+`sed -i '10s/$/ T T T/' POSCAR`
+`sed -i '11,89s/$/ F F F/' POSCAR`
+cp INCAR.pinlv INCAR
+mpirun -np 28 vasp --machinefile /data/known_hosts 1>std.log 2>std.err
+FX=`grep "SECOND" -A3 OUTCAR | tail -1 | cut -c 7-18`
+Fy=`grep "SECOND" -A4 OUTCAR | tail -1 | cut -c 19-30`
+FZ=`grep "SECOND" -A5 OUTCAR | tail -1 | cut -c 31-41`
+echo $i 1 $FX $Fy $FZ >>CFC.txt
+ for j in $(seq 10 1 40)
+ do
+ k=$((j+1))
+ m=$((j-8))
+ `sed -i ''"$j"'s/T T T/F F F/' POSCAR`
+ `sed -i ''"$k"'s/F F F/T T T/' POSCAR`
+ mpirun -np 28 vasp --machinefile /data/known_hosts 1>std.log 2>std.err
+ FX=`grep "SECOND" -A3 OUTCAR | tail -1 | cut -c 7-18`
+ Fy=`grep "SECOND" -A4 OUTCAR | tail -1 | cut -c 19-30`
+ FZ=`grep "SECOND" -A5 OUTCAR | tail -1 | cut -c 31-41`
+ echo $i $m $FX $Fy $FZ >>CFC.txt
+ done
+done
+
+
+
+
+
+
+
+
+
+
