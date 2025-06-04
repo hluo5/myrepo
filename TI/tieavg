@@ -1,0 +1,5 @@
+#!/bin/bash
+i=1000
+grep 'ab-initio' OSZICAR | cut -c 15-33 > e.txt
+#grep 'F' OSZICAR | cut -c 37-51 > e.txt
+awk -v i="$i" 'NR>i{s+=$1; ss+=$1^2} END{print m=s/(NR-i), sqrt(ss/(NR-i)-m^2)}' e.txt > e_avg.txt
