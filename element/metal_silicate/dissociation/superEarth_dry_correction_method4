@@ -1,0 +1,32 @@
+#!/usr/bin/env python3
+
+from scipy.optimize import fsolve
+import numpy as np
+
+# correction_method 3
+# Define the system of equations
+# 1-metal, 2-silicate, x-O, y-Mg, m-Si, n-Fe
+def equations(variables):
+    x1, x2, y1, y2, m1, m2, n1, n2 = variables
+    # Define your equations
+    eq1 = x1 + x2 - 17408   # total number of O
+    eq2 = y1 + y2 - 6144    # total number of Mg
+    eq3 = m1 + m2 - 5632    # total number of Si
+    eq4 = n1 + n2 - 5632    # total number of Fe 
+
+    # KD_dissolve equations
+    eq5 = (y1/(x1+y1+m1+n1)) * (x1/(x1+y1+m1+n1)) / (y2/(y2+m2+n2)) - 0.007782262       # MgO = Mg + O
+    eq6 = (m1/(x1+y1+m1+n1)) * (x1/(x1+y1+m1+n1))**2 / (m2/(y2+m2+n2)) - 0.016651411    # SiO2 = Si + 2O
+    eq7 = (n1/(x1+y1+m1+n1)) * (x1/(x1+y1+m1+n1)) / ((x2 - y2 - 2*m2)/(y2+m2+n2)) - 2.23684587  # FeO = Fe(met) + O
+    eq8 = ((n2 - (x2 - y2 - 2*m2)) / (y2 + m2 + n2)) * (x1/(x1+y1+m1+n1)) / ((x2 - y2 - 2*m2) / (y2 + m2 + n2)) - 0.96310  # FeO = Fe(sil) + O
+
+    return [eq1, eq2, eq3, eq4, eq5, eq6, eq7, eq8]
+
+# Initial guess
+initial_guess = np.array([280, 10280, 3, 3756, 149, 3177, 2144, 27])
+
+# Solve the system of equations
+solution = fsolve(equations, initial_guess)
+
+print("Solution:", solution)
+
