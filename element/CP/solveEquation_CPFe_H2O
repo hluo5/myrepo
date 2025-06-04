@@ -1,0 +1,17 @@
+#!/usr/bin/env python3
+
+import numpy as np
+from scipy.optimize import fsolve
+
+file = open("y.txt", 'w')
+x = np.loadtxt("x.txt",skiprows=0,max_rows=None)
+for i in range(10):
+	def f(y,x=x[i],b=-13.947,c=-13.395,T=3500):
+    		return b+8.617333*10**(-5)*T*(2*np.log(2*x/(1+2*x))+np.log(x/(1+2*x)))-c-8.617333*10**(-5)*T*(2*np.log(2*y/(5-2*y))+np.log((3-2*y)/(5-2*y)))
+	y=fsolve(f,0.000000001)
+	convergence=f(y)
+	print(y)
+	print(convergence)
+	np.savetxt(file,np.transpose([y,convergence]))
+file.close()
+
