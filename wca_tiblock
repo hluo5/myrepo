@@ -1,0 +1,27 @@
+#!/bin/bash
+
+grep ab-initio OSZICAR | awk '{print $2}' > ab
+grep wca OSZICAR | awk '{print $4}' > wca
+paste --delimiters=" "  wca ab | awk '{if(NF>1) print $2-$1}' > e_diff
+
+i=2000
+
+cat << EOF > block.py
+#!/usr/bin/python
+import numpy as np
+import pandas as pd
+import pyblock
+
+data = np.loadtxt("e_diff",skiprows=$i,max_rows=None)
+data = pd.Series(data)
+(data_length, reblock_data, covariance) = pyblock.pd_utils.reblock(data)
+data = pyblock.pd_utils.reblock_summary(reblock_data)
+data.to_csv('./e_tiblock.csv',sep = '\t')
+
+EOF
+
+chmod 755 block.py
+
+python block.py
+
+rm block.py
