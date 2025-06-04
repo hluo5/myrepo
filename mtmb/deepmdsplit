@@ -1,0 +1,13 @@
+#!/bin/bash
+
+cd deepmd
+mkdir training_data
+mkdir validation_data
+cp -r set.000 ./training_data
+cp -r set.001 ./validation_data
+cp type_map.raw ./training_data
+cp type_map.raw ./validation_data
+cp type.raw ./training_data
+cp type.raw ./validation_data
+rm -rfv set.000 set.001 type_map.raw type.raw
+

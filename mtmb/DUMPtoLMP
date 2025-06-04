@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+
+import dpdata
+import os
+
+#import dpdata
+#d_poscar = dpdata.System('npt.dump', fmt = 'lammps/dump')
+#print('Total frames:', len(d_poscar))
+#d_poscar.to_lammps_lmp('conf.lmp', frame_idx=-1)
+
+def read_last_frame_dump(file_path):
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+
+    # Reverse scan to find the last timestep marker
+    timestep_idx = None
+    for idx in range(len(lines) - 1, -1, -1):
+        if "ITEM: TIMESTEP" in lines[idx]:
+            timestep_idx = idx
+            break
+    
+    if timestep_idx is None:
+        raise ValueError("No timestep found in dump file.")
+
+    last_frame_lines = lines[timestep_idx:]
+    return ''.join(last_frame_lines)
+
+# Extract last frame as a temporary file
+last_frame_dump = 'last_frame.dump'
+with open(last_frame_dump, 'w') as f:
+    f.write(read_last_frame_dump('npt.dump'))
+
+# Quickly convert this single-frame dump to LAMMPS data file
+data = dpdata.System(last_frame_dump, fmt='lammps/dump')
+data.to_lammps_lmp('conf.lmp')
+
+os.remove(last_frame_dump)
+print("Extracted last frame successfully to conf.lmp!")
+
+
+
