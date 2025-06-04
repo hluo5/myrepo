@@ -1,0 +1,48 @@
+#Global Parameters
+
+  ISTART =  0
+  ICHARG =  2
+  NWRITE =  2
+  LREAL  =  A         
+  LWAVE  = .F.
+  LCHARG = .T.
+  LAECHG = .T.      
+  MAXMIX =  60     #Do not set MAXMIX>0 for machine learning
+  NPAR   =  8
+  GGA    =  PS
+  ENCUT  =  800
+ #PREC	 =  A
+ #ADDGRID = .T.
+
+#Electronic Relaxation
+
+  EDIFF  =  1E-04     
+  ALGO   =  F
+ #NELM   =  100
+  ISMEAR =  -1
+  SIGMA  =  0.7755609
+
+#Ionic Relaxation
+
+  NSW    =  0
+  IBRION =  0
+ #MDALGO =  2        
+  ISIF   =  2
+  ISYM   =  0
+  POTIM  =  1.0   
+  TEBEG  =  9000
+ #TEEND  =  9000
+  SMASS  =  1.00
+ #NBLOCK =  10
+  RANDOM_SEED =  248489752 0 0
+
+  NBANDS = 2600
+
+#Maching Learning force field
+
+ #ML_LMLFF = .TRUE.
+ #ML_MODE  = train      #train,select,refit,refitbayesian,run,none
+ #ML_MB    = 3000
+ #ML_LMAX2=2    #for fluid during refit
+ #ML_RCUT2=4    #for fluid during refit
+
