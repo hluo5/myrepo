@@ -1,0 +1,11 @@
+awk 'c&&!--c;/magnetization \(x\)/{c=4}' OUTCAR | awk '{ print $5 }' >> mag.txt
+awk 'c&&!--c;/magnetization \(x\)/{c=5}' OUTCAR | awk '{ print $5 }' >> mag.txt
+awk 'c&&!--c;/magnetization \(x\)/{c=6}' OUTCAR | awk '{ print $5 }' >> mag.txt
+awk 'c&&!--c;/magnetization \(x\)/{c=7}' OUTCAR | awk '{ print $5 }' >> mag.txt
+#awk 'c&&!--c;/magnetization \(x\)/{c=160}' OUTCAR | awk '{ print $5 }' >> mag.txt
+
+awk '{s+=$1^2} END{print mag=sqrt(s/NR)}' mag.txt >> mag_avg.txt
+
+#extract from 4th row to 57th row
+awk '/magnetization \(x\)/{c=1} c>=4 && c<59 && $6 != "" { print $6 } { if (c) c++ }' OUTCAR > Fe_mag.txt
+awk '{s+=$1^2} END{print mag=sqrt(s/NR)}' Fe_mag.txt > Fe_mag_avg.txt

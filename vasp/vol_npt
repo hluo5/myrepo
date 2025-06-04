@@ -1,0 +1,1 @@
+awk 'NR>1000{s+=$1; ss+=$1^2} END{print m=s/(NR-1000), sqrt(ss/(NR-1000)-m^2)}' V.txt > V_avg.txt

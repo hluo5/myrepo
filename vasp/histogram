@@ -1,0 +1,57 @@
+#!/bin/bash
+
+awk '/Direct/{ n=NR+1 }n && n<=NR && NR<(n+32){ print $3 }' XDATCAR > Mg.txt
+awk '/Direct/{ n=NR+33 }n && n<=NR && NR<(n+32){ print $3 }' XDATCAR > Si.txt
+awk '/Direct/{ n=NR+65 }n && n<=NR && NR<(n+104){ print $3 }' XDATCAR > O.txt
+awk '/Direct/{ n=NR+169 }n && n<=NR && NR<(n+16){ print $3 }' XDATCAR > H.txt
+awk '/Direct/{ n=NR+185 }n && n<=NR && NR<(n+108){ print $3 }' XDATCAR > Fe.txt
+
+i=1000
+j=30
+
+cat << EOF > histogram.py
+#!/usr/bin/python
+import numpy as np
+import pandas as pd
+
+data = np.loadtxt("Mg.txt",skiprows=$i*32,max_rows=None)
+hist, bins = np.histogram(data, bins=$j)
+bins = 0.5*(bins[1:] + bins[:-1])
+df = pd.DataFrame({"bins" : bins, "Mg" : hist})
+df.to_csv("hist_Mg.csv", index=False)
+
+data = np.loadtxt("Si.txt",skiprows=$i*32,max_rows=None)
+hist, bins = np.histogram(data, bins=$j)
+bins = 0.5*(bins[1:] + bins[:-1])
+df = pd.DataFrame({"bins" : bins, "Si" : hist})
+df.to_csv("hist_Si.csv", index=False)
+
+data = np.loadtxt("O.txt",skiprows=$i*104,max_rows=None)
+hist, bins = np.histogram(data, bins=$j)
+bins = 0.5*(bins[1:] + bins[:-1])
+df = pd.DataFrame({"bins" : bins, "O" : hist})
+df.to_csv("hist_O.csv", index=False)
+
+
+data = np.loadtxt("H.txt",skiprows=$i*16,max_rows=None)
+hist, bins = np.histogram(data, bins=$j)
+bins = 0.5*(bins[1:] + bins[:-1])
+df = pd.DataFrame({"bins" : bins, "H" : hist})
+df.to_csv("hist_H.csv", index=False)
+
+data = np.loadtxt("Fe.txt",skiprows=$i*108,max_rows=None)
+hist, bins = np.histogram(data, bins=$j)
+bins = 0.5*(bins[1:] + bins[:-1])
+df = pd.DataFrame({"bins" : bins, "Fe" : hist})
+df.to_csv("hist_Fe.csv", index=False)
+
+EOF
+
+chmod 755 histogram.py
+
+python histogram.py
+
+rm histogram.py
+
+cat hist_Mg.csv hist_Si.csv hist_O.csv hist_H.csv hist_Fe.csv > hist.csv
+rm hist_Mg.csv hist_Si.csv hist_O.csv hist_H.csv hist_Fe.csv

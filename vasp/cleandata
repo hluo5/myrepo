@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Define the filename and directories to search for the file
+
+for i in {1..14}
+do
+filename="vasprun.xml"
+directories=(
+    "/scratch/gpfs/hl0876/SuperEarth/G/50GPa-3500K/K2O/MgSiO3_1K2O/la2/run$i"
+    "/scratch/gpfs/hl0876/SuperEarth/G/50GPa-3500K/K2O/MgSiO3_1K2O/la1/run$i"
+)
+
+# Function to delete the file from different directories
+delete_file() {
+    for dir in "${directories[@]}"; do
+        file_path="$dir/$filename"
+
+        if [ -f "$file_path" ]; then
+            rm "$file_path"
+            echo "Deleted: $file_path"
+        fi
+    done
+}
+
+# Delete the file from different directories
+delete_file
+done

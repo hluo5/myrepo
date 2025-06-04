@@ -1,0 +1,4 @@
+#!/bin/bash
+i=3000
+grep 'total pressure' OUTCAR | cut -c 22-30 > P.txt
+awk -v i="$i" 'NR>i{s+=$1; ss+=$1^2} END{print m=s/(NR-i), sqrt(ss/(NR-i)-m^2)}' P.txt > P_avg.txt

@@ -1,0 +1,44 @@
+SYSTEM = MORB 
+
+ Startparameter for this Run:
+   NWRITE =      1;   LPETIM=F    write-flag & timer
+   ISTART =      0    job   : 0-new  1-cont  2-samecut
+   LWAVE  =  .FALSE.
+   LCHARG  =  .FALSE.
+
+ Electronic Relaxation 1
+   ENCUT  =   400.00 EV
+   NELM   =   60;
+   EDIFF  =   1E-04   stopping-criterion for ELM
+   MAXMIX =   50
+
+ Ionic Relaxation
+   NSW    =    2000  number of steps for IOM
+   NBLOCK =      1;   KBLOCK =     1    inner block; outer block
+   ISYM   =      0
+   ISIF   =      2
+
+   POTIM  =   1.0    time-step for ion-motion
+   TEBEG  =   4000 ;  TEEND=4000 initial temperature
+   SMASS  =   0.00    Nose mass-parameter (am)
+   NPACO  =   104
+   APACO  =   10.4
+
+ DOS related values:
+   ISMEAR =     -1;   SIGMA  =    .3447  broadening in eV -4-tet -1-fermi 0-gaus
+
+ Electronic Relaxation 2
+   IALGO  =      48    algorithm
+   LREAL  =      A
+   NPAR   =      2
+   GGA    =      PE
+   ISPIN  =      2
+   MAGMOM = 11*0 10*0 16*0 44*0 142*0 7*4 4*0
+   NUPDOWN =     -1
+   LASPH = .TRUE.
+   LDAU = .TRUE.
+   LDAUTYPE = 2
+   LDAUL = -1 -1 -1 -1 -1 2 -1
+   LDAUU = 0.0 0.0 0.0 0.0 0.0 4.0 0.0
+   LDAUJ = 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+   LDAUPRINT = 2 

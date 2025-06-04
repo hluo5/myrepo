@@ -1,0 +1,41 @@
+GGA = PS
+#LscaLAPACK=.FALSE.
+
+   MAXMIX=90
+   NPAR = 4
+   LCHARG=.FALSE.
+   LWAVE=.FALSE.
+   ICHARG=2
+   NWRITE=0
+#   IALGO = 38 
+
+   ALGO   = F
+   LREAL  = A       real space projections
+   PREC   = N
+   ISYM   = 0        switch of symmetry
+
+   ENCUT = 800
+   EDIFF  = 1E-4
+   IBRION = 0
+   NSW    = 10000
+
+#    MDALGO =   2
+   SMASS  =   1.0
+   POTIM  =   1.0 
+   TEBEG  = 12000
+#   ISIF   =   2
+   ISMEAR =   -1  
+   #15K SIGMA = 1.2926015
+   #8K SIGMA = 0.6893875 
+   #10K SIGMA = 0.8617343
+   #14K SIGMA = 1.2064281
+   SIGMA = 1.0340812
+
+# npt
+   ISIF = 3
+   MDALGO = 3
+   LANGEVIN_GAMMA = 100 100 100
+   LANGEVIN_GAMMA_L = 10
+   PMASS = 10000
+
+   PSTRESS = 10000
