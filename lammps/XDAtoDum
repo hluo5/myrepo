@@ -1,0 +1,8 @@
+#!/bin/python3
+
+import ase
+from ase.io import read, write
+from ase.io.lammpsdata import write_lammps_data
+
+simil = ase.io.read("./XDATCAR", index=':')
+simil_new_dump = ase.io.lammpsdata.write_lammps_data("dump", simil)

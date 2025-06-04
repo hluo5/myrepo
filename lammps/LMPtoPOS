@@ -1,0 +1,16 @@
+#!/bin/python3
+
+import dpdata
+
+# --- choose the correct parser for your file type -----------------
+# If conf.lmp is a LAMMPS *data* (structure) file:
+system = dpdata.System('conf.lmp', fmt='lammps/lmp')
+
+# If conf.lmp is actually a LAMMPS *dump* file, use this instead:
+# system = dpdata.System('conf.lmp', fmt='lammps/dump')
+# ------------------------------------------------------------------
+
+# Write the first (or only) frame to VASP POSCAR
+system.to_vasp_poscar('POSCAR')          # by default frame_idx = 0
+# system.to_vasp_poscar('POSCAR', frame_idx=200)  # use this if you need a later frame
+

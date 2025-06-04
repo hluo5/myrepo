@@ -1,0 +1,5 @@
+#!/bin/python3
+
+import dpdata
+d_poscar = dpdata.System('POSCAR', fmt = 'vasp/poscar')
+d_poscar.to_lammps_lmp('conf.lmp', frame_idx=0)
